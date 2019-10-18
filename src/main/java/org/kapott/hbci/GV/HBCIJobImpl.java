@@ -21,18 +21,6 @@
 
 package org.kapott.hbci.GV;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Properties;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import org.kapott.hbci.GV_Result.HBCIJobResult;
 import org.kapott.hbci.GV_Result.HBCIJobResultImpl;
 import org.kapott.hbci.callback.HBCICallback;
@@ -41,11 +29,7 @@ import org.kapott.hbci.exceptions.HBCI_Exception;
 import org.kapott.hbci.exceptions.InvalidArgumentException;
 import org.kapott.hbci.exceptions.InvalidUserDataException;
 import org.kapott.hbci.exceptions.JobNotSupportedException;
-import org.kapott.hbci.manager.HBCIHandler;
-import org.kapott.hbci.manager.HBCIUtils;
-import org.kapott.hbci.manager.HBCIUtilsInternal;
-import org.kapott.hbci.manager.LogFilter;
-import org.kapott.hbci.manager.MsgGen;
+import org.kapott.hbci.manager.*;
 import org.kapott.hbci.passport.HBCIPassport;
 import org.kapott.hbci.passport.HBCIPassportInternal;
 import org.kapott.hbci.passport.HBCIPassportList;
@@ -56,6 +40,10 @@ import org.kapott.hbci.status.HBCIMsgStatus;
 import org.kapott.hbci.status.HBCIRetVal;
 import org.kapott.hbci.structures.Konto;
 import org.kapott.hbci.structures.Value;
+
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public abstract class HBCIJobImpl 
     implements HBCIJob
@@ -479,8 +467,10 @@ public abstract class HBCIJobImpl
 
                 if (content==null) {
                     String msg=HBCIUtilsInternal.getLocMsg("EXC_MISSING_HL_PROPERTY",frontendName);
-                    if (!HBCIUtilsInternal.ignoreError(passport,"client.errors.ignoreWrongJobDataErrors",msg))
-                        throw new InvalidUserDataException(msg);
+                    if (!frontendName.equals("my.bic")) {
+                        if (!HBCIUtilsInternal.ignoreError(passport, "client.errors.ignoreWrongJobDataErrors", msg))
+                            throw new InvalidUserDataException(msg);
+                    }
                     content="";
                 }
 

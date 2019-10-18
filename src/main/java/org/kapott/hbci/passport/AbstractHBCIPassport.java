@@ -21,15 +21,6 @@
 
 package org.kapott.hbci.passport;
 
-import java.io.Serializable;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Properties;
-
 import org.kapott.hbci.callback.HBCICallback;
 import org.kapott.hbci.comm.Comm;
 import org.kapott.hbci.comm.Filter;
@@ -37,14 +28,15 @@ import org.kapott.hbci.dialog.DialogContext;
 import org.kapott.hbci.dialog.DialogEvent;
 import org.kapott.hbci.exceptions.HBCI_Exception;
 import org.kapott.hbci.exceptions.InvalidUserDataException;
-import org.kapott.hbci.manager.HBCIKey;
-import org.kapott.hbci.manager.HBCIUtils;
-import org.kapott.hbci.manager.HBCIUtilsInternal;
-import org.kapott.hbci.manager.IHandlerData;
-import org.kapott.hbci.manager.LogFilter;
+import org.kapott.hbci.manager.*;
 import org.kapott.hbci.structures.Konto;
 import org.kapott.hbci.structures.Limit;
 import org.kapott.hbci.structures.Value;
+
+import java.io.Serializable;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.*;
 
 /** <p>Diese Klasse stellt die Basisklasse für alle "echten" Passport-Implementationen
     dar. Hier werden bereits einige Methoden implementiert sowie einige 
@@ -245,8 +237,8 @@ public abstract class AbstractHBCIPassport
                 entry.customerid=upd.getProperty(header+".customerid");
                 entry.name=upd.getProperty(header+".name1");
                 entry.name2=upd.getProperty(header+".name2");
-                entry.bic=upd.getProperty(header+".KTV.bic");
-                entry.iban=upd.getProperty(header+".KTV.iban");
+                entry.bic=upd.getProperty(header+".bic");
+                entry.iban=upd.getProperty(header+".iban");
                 entry.acctype=upd.getProperty(header+".acctype");
                 
                 String st;
