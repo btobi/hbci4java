@@ -1,23 +1,23 @@
-
-/*  $Id: AbstractPinTanPassport.java,v 1.6 2011/06/06 10:30:31 willuhn Exp $
-
-    This file is part of HBCI4Java
-    Copyright (C) 2001-2008  Stefan Palme
-
-    HBCI4Java is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    HBCI4Java is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*/
+/**********************************************************************
+ *
+ * This file is part of HBCI4Java.
+ * Copyright (c) 2001-2008 Stefan Palme
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ **********************************************************************/
 
 package org.kapott.hbci.passport;
 
@@ -64,7 +64,7 @@ import org.kapott.hbci.security.Sig;
 import org.kapott.hbci.status.HBCIMsgStatus;
 import org.kapott.hbci.status.HBCIRetVal;
 import org.kapott.hbci.structures.Konto;
-import org.kapott.hbci.tools.DigestUtils;
+import org.kapott.hbci.tools.CryptUtils;
 import org.kapott.hbci.tools.NumberUtil;
 import org.kapott.hbci.tools.ParameterFinder;
 import org.kapott.hbci.tools.ParameterFinder.Query;
@@ -654,54 +654,13 @@ public abstract class AbstractPinTanPassport extends AbstractHBCIPassport
      */
     public boolean isSupported()
     {
-        boolean ret=false;
-        Properties bpd=getBPD();
-        
-        if (bpd!=null && bpd.size()!=0) {
-            // loop through bpd and search for PinTanPar segment
-            for (Enumeration e=bpd.propertyNames();e.hasMoreElements();) {
-                String key=(String)e.nextElement();
-                
-                if (key.startsWith("Params")) {
-                    int posi=key.indexOf(".");
-                    if (key.substring(posi+1).startsWith("PinTanPar")) {
-                        ret=true;
-                        break;
-                    }
-                }
-            }
-            
-            if (ret) {
-                // prüfen, ob gewähltes sicherheitsverfahren unterstützt wird
-                // autosecmech: hier wird ein flag uebergeben, das anzeigt, dass getCurrentTANMethod()
-                // hier evtl. automatisch ermittelte secmechs neu verifzieren soll
-                String current=getCurrentTANMethod(true);
-                
-                if (current.equals(TanMethod.ONESTEP.getId())) {
-                    // einschrittverfahren gewählt
-                    if (!isOneStepAllowed()) {
-                        HBCIUtils.log("not supported: onestep method not allowed by BPD",HBCIUtils.LOG_ERR);
-                        ret=false;
-                    } else {
-                        HBCIUtils.log("supported: pintan-onestep",HBCIUtils.LOG_DEBUG);
-                    }
-                } else {
-                    // irgendein zweischritt-verfahren gewählt
-                    Properties entry=tanMethodsBank.get(current);
-                    if (entry==null) {
-                        // es gibt keinen info-eintrag für das gewählte verfahren
-                        HBCIUtils.log("not supported: twostep-method "+current+" selected, but this is not supported",HBCIUtils.LOG_ERR);
-                        ret=false;
-                    } else {
-                        HBCIUtils.log("selected twostep-method "+current+" ("+entry.getProperty("name")+") is supported",HBCIUtils.LOG_DEBUG);
-                    }
-                }
-            }
-        } else {
-            ret=true;
-        }
-        
-        return ret;
+      final Properties bpd = this.getBPD();
+      if (bpd == null)
+        return true;
+
+      // Wir triggern hier nur einmal die Auswahl des TAN-Verfahrens
+      this.getCurrentTANMethod(true);
+      return true;
     }
     
     /**
@@ -767,7 +726,10 @@ public abstract class AbstractPinTanPassport extends AbstractHBCIPassport
         // Wenn der User noch keine TAN-Verfahren hat, bleibt und als Option nur 999 - also Einschritt-Verfahren, um an den 3920
         // mit den zulaessigen Verfahren zu kommen. Wir pruefen hier gar nicht erst per "isOneStepAllowed", ob die Bank ein
         // Einschritt-Verfahren anbietet, weil wir gar keine andere Option haben
-        if (this.tanMethodsUser.size() == 0)
+        // Update 2019-11-02: Geht bei der Postbank leider nicht. Die erlauben kein Einschritt-Vefahren und wollen daher
+        // tatsaechlich bereits beim Abruf der verfuegbaren TAN-Verfahren ein Zweischritt-Verfahren haben. Siehe 
+        // https://homebanking-hilfe.de/forum/topic.php?p=151725#real151725
+        if (this.tanMethodsUser.size() == 0 && this.isOneStepAllowed())
             return TanMethod.ONESTEP.getId();
         
         /////////////////////////////////////////
@@ -796,10 +758,33 @@ public abstract class AbstractPinTanPassport extends AbstractHBCIPassport
         
         if (userList.size() == 0)
         {
+          if (this.isOneStepAllowed())
+          {
             final TanMethod m = TanMethod.ONESTEP;
-            HBCIUtils.log("no tan method available for user, using: " + m,HBCIUtils.LOG_WARN);
+            HBCIUtils.log("no tan method available for user, using: " + m,HBCIUtils.LOG_DEBUG);
             // Wir speichern das TAN-Verfahren nicht, das kann unmoeglich das finale Verfahren sein.
             return m.getId();
+          }
+          else
+          {
+            // Sonderfall HBCI4Java Testserver. Der liefert gar keine TAN-Verfahren
+            if (bankList.size() == 0)
+            {
+              final TanMethod m = TanMethod.ONESTEP;
+              HBCIUtils.log("no tan method available for bank, using: " + m,HBCIUtils.LOG_DEBUG);
+              // Wir speichern das TAN-Verfahren nicht, das kann unmoeglich das finale Verfahren sein.
+              return m.getId();
+            }
+            
+            // Das ist sicher die Postbank. Wir haben noch kein Verfahren per 3920 erhalten, die Bank erlaubt
+            // aber nicht, diese per Einschritt-Verfahren abzurufen. Also muessen wir den User bitten, die Auswahl
+            // aus der in den BPD verfuegbaren Verfahren zu treffen. Auch wenn diese Liste dann Eintraege enthaelt,
+            // die fuer den User u.U. gar nicht verfuegbar sind.
+            HBCIUtils.log("have no methods for user and institute doesn't allow one step method - asking user. available methods on institute: " + bankList,HBCIUtils.LOG_DEBUG);
+            this.setCurrentTANMethod(this.chooseTANMethod(bankList));
+            HBCIUtils.log("selected pintan method by user: " + tanMethod, HBCIUtils.LOG_INFO);
+            return this.tanMethod;
+          }
         }
         
         if (userList.size() == 1)
@@ -1406,9 +1391,9 @@ public abstract class AbstractPinTanPassport extends AbstractHBCIPassport
         final String s = ParameterFinder.getValue(bpd,Query.BPD_PINTAN_ORDERHASHMODE.withParameters((segVersion != null ? segVersion : "")),null);
         
         if ("1".equals(s))
-            return DigestUtils.ALG_RIPE_MD160;
+            return CryptUtils.HASH_ALG_RIPE_MD160;
         if ("2".equals(s))
-            return DigestUtils.ALG_SHA1;
+            return CryptUtils.HASH_ALG_SHA1;
                     
         throw new HBCI_Exception("unknown orderhash mode " + s);
     }
@@ -1529,7 +1514,7 @@ public abstract class AbstractPinTanPassport extends AbstractHBCIPassport
                         seg.validate();
                         final String segdata = seg.toString(0);
                         HBCIUtils.log("calculating hash for jobsegment: " + segdata,HBCIUtils.LOG_DEBUG2);
-                        hktan.setParam("orderhash",DigestUtils.hash(segdata,this.getOrderHashMode()));
+                        hktan.setParam("orderhash",CryptUtils.hash(segdata,this.getOrderHashMode()));
                     }
                     finally
                     {

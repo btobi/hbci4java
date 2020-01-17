@@ -1,10 +1,21 @@
 /**********************************************************************
  *
+ * This file is part of HBCI4Java.
  * Copyright (c) 2019 Olaf Willuhn
- * All rights reserved.
- * 
- * This software is copyrighted work licensed under the terms of the
- * Jameica License.  Please consult the file "LICENSE" for details. 
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  *
  **********************************************************************/
 
@@ -176,8 +187,8 @@ public abstract class AbstractRawHBCIDialog implements RawHBCIDialog
     }
     
     /**
-     * Liefert die hoechste bei der Bank verfuegbare Segment-Version fuer das HKTAB.
-     * @param p der Passport.
+     * Liefert die hoechste bei der Bank verfuegbare Segment-Version.
+     * @param ctx der Kontext.
      * @param gvName der Name des Geschaeftsvorfalls.
      * @param defaultVersion die Default-Version, wenn keine gefunden wurde.
      * @return die Segment-Version oder NULL, wenn keine brauchbare Version unterstuetzt wird
@@ -193,14 +204,7 @@ public abstract class AbstractRawHBCIDialog implements RawHBCIDialog
   
       try
       {
-        final Integer i = Integer.valueOf(version);
-        if (i == null)
-          return defaultVersion;
-  
-        if (i.intValue() < 2 || i.intValue() > 5)
-          return defaultVersion;
-  
-        return i;
+        return Integer.valueOf(version);
       } catch (Exception e)
       {
         HBCIUtils.log("invalid segment version: " + version, HBCIUtils.LOG_WARN);

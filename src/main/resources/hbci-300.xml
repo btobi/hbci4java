@@ -646,6 +646,7 @@
             </valids>
             <valids path="alg">
                 <validvalue>13</validvalue>
+                <validvalue>14</validvalue> <!-- AES-256 -->
             </valids>
             <valids path="keytype">
                 <validvalue>5</validvalue>
@@ -765,6 +766,7 @@
             <valids path="method">
                 <validvalue>DDV</validvalue>
                 <validvalue>RDH</validvalue>
+                <validvalue>RAH</validvalue>
                 <validvalue>PIN</validvalue>
             </valids>
             <valids path="version">
@@ -1384,6 +1386,14 @@
 	    	<DE name="cansingletransfer" type="JN" />
 		</DEGdef>
         
+        <DEGdef id="ParTermSammelUebSEPA">
+            <DE name="minVorlZeit" type="Num" maxsize="4"/>
+            <DE name="maxVorlZeit" type="Num" maxsize="4"/>
+            <DE name="maxnum" type="Num" maxsize="7" />
+            <DE name="needtotal" type="JN" />
+            <DE name="cansingletransfer" type="JN" />
+        </DEGdef>
+
         <DEGdef id="ParSEPAInfo">
             <DE name="cansingleaccquery" type="JN"/>
             <DE name="cannationalacc" type="JN"/>
@@ -2040,6 +2050,7 @@
                 <validvalue>M</validvalue>
                 <validvalue>S</validvalue>
                 <validvalue>A</validvalue>
+                <validvalue>B</validvalue>
             </valids>
             <valids path="status">
                 <validvalue>1</validvalue>
@@ -4911,6 +4922,34 @@
             <value path="SegHead.version">1</value>
         </SEGdef>
         
+        <SEGdef id="TermSammelUebSEPA1">
+            <DEG type="SegHeadUser" name="SegHead" />
+            <DEG type="KTVInt" name="My" />
+            <DEG type="BTG" name="Total" minnum="0" />
+            <DE type="JN" name="singletransfers" minnum="0" />
+            <DE type="AN" name="sepadescr" maxsize="256" />
+            <DE type="Bin" name="sepapain" maxsize="0" />
+
+            <value path="SegHead.code">HKCME</value>
+            <value path="SegHead.version">1</value>
+        </SEGdef>
+        <SEGdef id="TermSammelUebSEPARes1">
+            <DEG type="SegHeadInst" name="SegHead"/>
+            <DE name="orderid" type="AN" maxsize="99" minnum="0"/>
+
+            <value path="SegHead.code">HICME</value>
+            <value path="SegHead.version">1</value>
+        </SEGdef>
+        <SEGdef id="TermSammelUebSEPAPar1">
+            &GVP2;
+            <DEG type="ParTermSammelUebSEPA"/>
+
+            &SecClassValids;
+
+            <value path="SegHead.code">HICMES</value>
+            <value path="SegHead.version">1</value>
+        </SEGdef>
+
         <SEGdef id="SammelLastSEPA1"> <!-- 3.0 -->
             <DEG type="SegHeadUser" name="SegHead" />
 	        <DEG type="KTVInt" name="My" />
@@ -6259,6 +6298,58 @@
             <value path="SegHead.version">1</value>
         </SEGdef>
 
+        <!-- BEGIN SEPA-Instant aka 'SEPA-Instant Payment Zahlung' -->
+        <!-- Request -->
+        <SEGdef id="InstUebSEPA1">
+            <DEG type="SegHeadUser" name="SegHead"/>
+            <DEG type="KTVInt" name="My"/>
+            <DE name="sepadescr" type="AN" maxsize="256"/>
+            <DE name="sepapain" type="Bin" maxsize="0"/>
+
+            <value path="SegHead.code">HKIPZ</value>
+            <value path="SegHead.version">1</value>
+        </SEGdef>
+
+        <!-- Response -->
+        <SEGdef id="InstUebSEPARes1">
+            <DEG type="SegHeadInst" name="SegHead"/>
+            <DE name="orderid" type="AN" maxsize="99" minnum="0"/>
+            <DE name="ccode" type="Code" maxsize="1" minnum="0"/>
+            <DE name="orderstatus" type="Code" maxsize="1" minnum="0"/>
+
+            <valids path="ccode">
+                <validvalue>1</validvalue>
+                <validvalue>2</validvalue>
+                <validvalue>3</validvalue>
+                <validvalue>4</validvalue>
+            </valids>
+            <valids path="orderstatus">
+                <validvalue>1</validvalue>
+                <validvalue>2</validvalue>
+                <validvalue>3</validvalue>
+                <validvalue>4</validvalue>
+                <validvalue>5</validvalue>
+                <validvalue>6</validvalue>
+                <validvalue>7</validvalue>
+                <validvalue>8</validvalue>
+                <validvalue>9</validvalue>
+            </valids>
+
+            <value path="SegHead.code">HIIPZ</value>
+            <value path="SegHead.version">1</value>
+        </SEGdef>
+
+        <!-- BPD -->
+        <SEGdef id="InstUebSEPAPar1">
+            &GVP2;
+            <DEG type="ParUmbSepa" name="ParUmbSepa"/>
+            &SecClassValids;
+
+            <value path="SegHead.code">HIIPZS</value>
+            <value path="SegHead.version">1</value>
+        </SEGdef>
+        <!-- END SEPA-Instant aka 'SEPA-Instant Payment Zahlung' -->
+
         <!-- BEGIN SEPA-Umbuchung aka 'SEPA-Überweisung auf ein Empfängerkonto' -->
         <!-- Request -->
         <SEGdef id="UmbSEPA1">
@@ -7569,6 +7660,7 @@
             <SEG type="InfoList2" minnum="0"/>
             <SEG type="InfoList3" minnum="0"/>
             <SEG type="InfoList4" minnum="0"/>
+            <SEG type="InstUebSEPA1" minnum="0"/>
             <SEG type="Kontoauszug1" minnum="0"/>
             <SEG type="Kontoauszug2" minnum="0"/>
             <SEG type="Kontoauszug3" minnum="0"/>
@@ -7611,6 +7703,7 @@
             <SEG type="SammelUeb6" minnum="0"/>
             <SEG type="SammelUebEil1" minnum="0"/>
             <SEG type="SammelUebSEPA1" minnum="0"/>
+            <SEG type="TermSammelUebSEPA1" minnum="0"/>
             <SEG type="SammelLastSEPA1" minnum="0"/>
             <SEG type="SammelLastCOR1SEPA1" minnum="0"/>
             <SEG type="SammelLastB2BSEPA1" minnum="0"/>
@@ -7729,6 +7822,7 @@
             <SEG type="InfoListRes2" minnum="0"/>
             <SEG type="InfoListRes3" minnum="0"/>
             <SEG type="InfoListRes4" minnum="0"/>
+            <SEG type="InstUebSEPARes1" minnum="0"/>
             <SEG type="KontoauszugRes1" minnum="0"/>
             <SEG type="KontoauszugRes2" minnum="0"/>
             <SEG type="KontoauszugRes3" minnum="0"/>
@@ -7771,6 +7865,7 @@
             <SEG type="TermSammelLastListRes3" minnum="0"/>
             <SEG type="TermSammelUebRes3" minnum="0"/>
             <SEG type="TermSammelUebListRes3" minnum="0"/>
+            <SEG type="TermSammelUebSEPARes1" minnum="0"/>
             <SEG type="TermUebRes2" minnum="0"/>
             <SEG type="TermUebRes3" minnum="0"/>
             <SEG type="TermUebRes4" minnum="0"/>
@@ -7867,6 +7962,7 @@
             <SEG type="InfoListPar2" minnum="0"/>
             <SEG type="InfoListPar3" minnum="0"/>
             <SEG type="InfoListPar4" minnum="0"/>
+            <SEG type="InstUebSEPAPar1" minnum="0"/>
             <SEG type="KontoauszugPar1" minnum="0"/>
             <SEG type="KontoauszugPar2" minnum="0"/>
             <SEG type="KontoauszugPar3" minnum="0"/>
@@ -7936,6 +8032,7 @@
             <SEG type="TermSammelUebPar3" minnum="0"/>
             <SEG type="TermSammelUebDelPar3" minnum="0"/>
             <SEG type="TermSammelUebListPar3" minnum="0"/>
+            <SEG type="TermSammelUebSEPAPar1" minnum="0"/>
             <SEG type="TermUebPar2" minnum="0"/>
             <SEG type="TermUebPar3" minnum="0"/>
             <SEG type="TermUebPar4" minnum="0"/>
@@ -8083,6 +8180,7 @@
             <SEG type="TAN2StepRes6" minnum="0" maxnum="1"/>
             <SEG type="KIMsg" minnum="0" maxnum="0"/>
             <SEG type="TAN2StepRes6" minnum="0" maxnum="1"/>
+            <SEG type="SEPAInfoRes1" minnum="0" maxnum="1"/>
             &MsgSigTailInst;
         </MSGdef>
 
